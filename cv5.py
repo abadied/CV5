@@ -83,6 +83,44 @@ def Q3(image):
                 I_warpped[i][j] = 0
     return I_warpped
 
+# ================
+# Question 4
+# ================
+
+
+def spatial_derivative(im_1, im_2):
+    return im_2 - im_1
+
+# ================
+# Question 5
+# ================
+
+def get_derivatives():
+    pass
+
+def create_A():
+    pass
+
+
+def create_b(img_x, img_y, img_t):
+    n_row = img_t.shape[0]
+    n_col = img_t.shape[1]
+    b = np.zeros(2 * n_row * n_col, dtype=np.float32)
+    for i in range(n_row):
+        for j in range(n_col):
+            curr_row = (i * n_row) + j + 1
+            b[2 * curr_row - 1] = - img_x[i, j] * img_t[i, j]
+            b[2 * curr_row] = - img_y[i, j] * img_t[i, j]
+    return b[1:]
+
+
+def q5_all_images():
+    pass
+
+
+def q5_image():
+    pass
+
 
 def main():
     mdict = sio.loadmat("hw4_data/hw4_data/imgs_for_optical_flow.mat")
@@ -119,6 +157,31 @@ def main():
     ax = fig.add_subplot(155)
     ax.set_title('warpAffine')
     ax.imshow(image_w_warp_affine, cmap='gray')
+    plt.show()
+
+    # Question 4
+    fig = plt.figure(5, figsize=(15, 10))
+    ax = fig.add_subplot(1, 5, 1)
+    ax.title.set_text('I2 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img2']), cmap='gray')
+
+    ax = fig.add_subplot(152)
+    ax.set_title('I3 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img3']), cmap='gray')
+
+    ax = fig.add_subplot(153)
+    ax.set_title('I4 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img4']), cmap='gray')
+
+    ax = fig.add_subplot(154)
+    ax.set_title('I5 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img5']), cmap='gray')
+
+    ax = fig.add_subplot(155)
+    ax.set_title('I6 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img6']), cmap='gray')
+    plt.show()
+
     print('Done')
 
 
