@@ -143,39 +143,39 @@ def create_A(im_x, im_y, lamb):
             row_v_vals = np.zeros((2 * (N_rows * N_cols) + 1))
             # update A for non-border pixels
             if 1 <= i < N_rows - 1 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'non-border', i_s, i, j, N_rows, N_cols, 8, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'non-border', i_s, i, j, N_rows, N_cols, 8, im_x, im_y)
 
             # update A for upper border pixels
             elif i == 0 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'upper', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'upper', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
 
             # update A for bottom border pixels
             elif i == N_rows - 1 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'bottom', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'bottom', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
 
             # update A for right border pixels
             elif 1 <= i < N_rows - 1 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'right', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'right', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
 
             # update A for left border pixels
             elif 1 <= i < N_rows - 1 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'left', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'left', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
 
             # update A for up-left corner
             elif i == 0 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'up-left', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-left', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
 
             # update A for up-right corner
             elif i == 0 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'up-right', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-right', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
 
             # update A for down-left corner
             elif i == N_rows - 1 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'down-left', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-left', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
 
             # update A for down-right corner
             elif i == N_rows - 1 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'down-right', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-right', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
 
             A[row_u][:] = row_u_vals
             A[row_v][:] = row_v_vals
