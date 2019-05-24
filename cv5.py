@@ -95,11 +95,94 @@ def spatial_derivative(im_1, im_2):
 # Question 5
 # ================
 
-def get_derivatives():
-    pass
 
-def create_A():
-    pass
+def get_derivatives(img):
+    # pasI = cv2.GaussianBlur(img, (11,11), 7)
+    h_x1, h_x2 = cv2.getDerivKernels(1, 0, 3, normalize=True)
+    h_y1, h_y2 = cv2.getDerivKernels(0, 1, 3, normalize=True)
+    img_x = cv2.sepFilter2D(img, -1, h_x1, h_x2)
+    img_y = cv2.sepFilter2D(img, -1, h_y1, h_y2)
+    return img_x, img_y
+
+
+def get_A_row(lamb, location, i_s, i, j, N_rows, N_cols, factor, img_x, img_y):
+    row_u_vals = np.zeros((2 * (N_rows * N_cols) + 1))
+    row_v_vals = np.zeros((2 * (N_rows * N_cols) + 1))
+
+    row_u_vals[2 * i_s - 1] = img_x[i][j] ** 2 + factor * lamb
+    row_u_vals[2 * i_s] = img_x[i][j] * img_y[i][j]
+    row_v_vals[2 * i_s - 1] = img_x[i][i] * img_y[i][j]
+    row_v_vals[2 * i_s] = img_y[i][j] ** 2 + factor * lamb
+    if location != 'upper' and location != 'up-left' and location != 'up-right':
+        row_u_vals[2 * i_s - 2 * N_cols - 1] = -2 * lamb
+        row_v_vals[2 * i_s - 2 * N_cols] = -2 * lamb
+    if location != 'left' and location != 'up-left' and location != 'down-left':
+        row_u_vals[2 * i_s - 3] = -2 * lamb
+        row_v_vals[2 * i_s - 2] = -2 * lamb
+    if location != 'right' and location != 'up-right' and location != 'down-right':
+        row_u_vals[2 * i_s + 1] = -2 * lamb
+        row_v_vals[2 * i_s + 2] = -2 * lamb
+    if location != 'bottom' and location != 'down-right' and location != 'down-left':
+        row_u_vals[2 * i_s + 2 * N_cols - 1] = -2 * lamb
+        row_v_vals[2 * i_s + 2 * N_cols] = -2 * lamb
+    return row_u_vals, row_v_vals
+
+
+def create_A(im_x, im_y, lamb):
+    N_rows, N_cols = im_x.shape
+    N = N_rows * N_cols
+    A = np.zeros((2 * N + 1, 2 * N + 1))
+    # A = sparse.lil_matrix((2*N+1, 2*N+1))
+    # run on the image, for each pixel s create 2 rows in A:
+    for i in range(0, N_rows):
+        for j in range(0, N_cols):
+            i_s = (i * N_cols) + (j + 1)  # convert (i,j) to i_s in "1-based" index
+            row_u = 2 * i_s - 1
+            row_v = 2 * i_s
+            row_u_vals = np.zeros((2 * (N_rows * N_cols) + 1))
+            row_v_vals = np.zeros((2 * (N_rows * N_cols) + 1))
+            # update A for non-border pixels
+            if 1 <= i < N_rows - 1 and 1 <= j < N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'non-border', i_s, i, j, N_rows, N_cols, 8, Ix, Iy)
+
+            # update A for upper border pixels
+            elif i == 0 and 1 <= j < N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'upper', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+
+            # update A for bottom border pixels
+            elif i == N_rows - 1 and 1 <= j < N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'bottom', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+
+            # update A for right border pixels
+            elif 1 <= i < N_rows - 1 and j == N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'right', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+
+            # update A for left border pixels
+            elif 1 <= i < N_rows - 1 and j == 0:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'left', i_s, i, j, N_rows, N_cols, 6, Ix, Iy)
+
+            # update A for up-left corner
+            elif i == 0 and j == 0:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-left', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+
+            # update A for up-right corner
+            elif i == 0 and j == N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-right', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+
+            # update A for down-left corner
+            elif i == N_rows - 1 and j == 0:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-left', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+
+            # update A for down-right corner
+            elif i == N_rows - 1 and j == N_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-right', i_s, i, j, N_rows, N_cols, 4, Ix, Iy)
+
+            A[row_u][:] = row_u_vals
+            A[row_v][:] = row_v_vals
+
+    sA = scipy.sparse.csr_matrix(A[1:, 1:])
+
+    return sA
 
 
 def create_b(img_x, img_y, img_t):
