@@ -2,15 +2,11 @@
 import numpy as np
 import cv2
 import scipy
-from scipy import ndimage
 from matplotlib import pyplot as plt
-from scipy.ndimage import gaussian_filter
 import math
 import scipy.signal
 import scipy.io as sio
-from math import pow
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+from cv2 import GaussianBlur
 
 # ================
 # Question 1
@@ -94,14 +90,24 @@ def spatial_derivative(im_1, im_2):
 # ================
 # Question 5
 # ================
-
+def warp_image(I, U, V):
+    height, width = I.shape
+    U = U.astype(np.float32)
+    V = V.astype(np.float32)
+    yy, xx = np.mgrid[:height, :width]
+    map_x = xx - U
+    map_y = yy - V
+    map_x = map_x.astype(np.float32)
+    map_y = map_y.astype(np.float32)
+    I_warpped_remap = cv2.remap(I, map_x, map_y, cv2.INTER_CUBIC)
+    return I_warpped_remap
 
 def get_derivatives(img):
-    # pasI = cv2.GaussianBlur(img, (11,11), 7)
+    I = GaussianBlur(src=img, ksize=(11, 11), sigmaX=7)
     h_x1, h_x2 = cv2.getDerivKernels(1, 0, 3, normalize=True)
     h_y1, h_y2 = cv2.getDerivKernels(0, 1, 3, normalize=True)
-    img_x = cv2.sepFilter2D(img, -1, h_x1, h_x2)
-    img_y = cv2.sepFilter2D(img, -1, h_y1, h_y2)
+    img_x = cv2.sepFilter2D(I, -1, h_x1, h_x2)
+    img_y = cv2.sepFilter2D(I, -1, h_y1, h_y2)
     return img_x, img_y
 
 
@@ -129,53 +135,53 @@ def get_A_row(lamb, location, i_s, i, j, N_rows, N_cols, factor, img_x, img_y):
 
 
 def create_A(im_x, im_y, lamb):
-    N_rows, N_cols = im_x.shape
-    N = N_rows * N_cols
+    n_rows, n_cols = im_x.shape
+    N = n_rows * n_cols
     A = np.zeros((2 * N + 1, 2 * N + 1))
-    # A = sparse.lil_matrix((2*N+1, 2*N+1))
+
     # run on the image, for each pixel s create 2 rows in A:
-    for i in range(0, N_rows):
-        for j in range(0, N_cols):
-            i_s = (i * N_cols) + (j + 1)  # convert (i,j) to i_s in "1-based" index
+    for i in range(0, n_rows):
+        for j in range(0, n_cols):
+            i_s = (i * n_cols) + (j + 1)  # convert (i,j) to i_s in "1-based" index
             row_u = 2 * i_s - 1
             row_v = 2 * i_s
-            row_u_vals = np.zeros((2 * (N_rows * N_cols) + 1))
-            row_v_vals = np.zeros((2 * (N_rows * N_cols) + 1))
+            row_u_vals = np.zeros((2 * (n_rows * n_cols) + 1))
+            row_v_vals = np.zeros((2 * (n_rows * n_cols) + 1))
             # update A for non-border pixels
-            if 1 <= i < N_rows - 1 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'non-border', i_s, i, j, N_rows, N_cols, 8, im_x, im_y)
+            if 1 <= i < n_rows - 1 and 1 <= j < n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'non-border', i_s, i, j, n_rows, n_cols, 8, im_x, im_y)
 
             # update A for upper border pixels
-            elif i == 0 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'upper', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
+            elif i == 0 and 1 <= j < n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'upper', i_s, i, j, n_rows, n_cols, 6, im_x, im_y)
 
             # update A for bottom border pixels
-            elif i == N_rows - 1 and 1 <= j < N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'bottom', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
+            elif i == n_rows - 1 and 1 <= j < n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'bottom', i_s, i, j, n_rows, n_cols, 6, im_x, im_y)
 
             # update A for right border pixels
-            elif 1 <= i < N_rows - 1 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'right', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
+            elif 1 <= i < n_rows - 1 and j == n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'right', i_s, i, j, n_rows, n_cols, 6, im_x, im_y)
 
             # update A for left border pixels
-            elif 1 <= i < N_rows - 1 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'left', i_s, i, j, N_rows, N_cols, 6, im_x, im_y)
+            elif 1 <= i < n_rows - 1 and j == 0:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'left', i_s, i, j, n_rows, n_cols, 6, im_x, im_y)
 
             # update A for up-left corner
             elif i == 0 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'up-left', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-left', i_s, i, j, n_rows, n_cols, 4, im_x, im_y)
 
             # update A for up-right corner
-            elif i == 0 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'up-right', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
+            elif i == 0 and j == n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'up-right', i_s, i, j, n_rows, n_cols, 4, im_x, im_y)
 
             # update A for down-left corner
-            elif i == N_rows - 1 and j == 0:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'down-left', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
+            elif i == n_rows - 1 and j == 0:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-left', i_s, i, j, n_rows, n_cols, 4, im_x, im_y)
 
             # update A for down-right corner
-            elif i == N_rows - 1 and j == N_cols - 1:
-                row_u_vals, row_v_vals = get_A_row(lamb, 'down-right', i_s, i, j, N_rows, N_cols, 4, im_x, im_y)
+            elif i == n_rows - 1 and j == n_cols - 1:
+                row_u_vals, row_v_vals = get_A_row(lamb, 'down-right', i_s, i, j, n_rows, n_cols, 4, im_x, im_y)
 
             A[row_u][:] = row_u_vals
             A[row_v][:] = row_v_vals
@@ -186,23 +192,35 @@ def create_A(im_x, im_y, lamb):
 
 
 def create_b(img_x, img_y, img_t):
-    n_row = img_t.shape[0]
-    n_col = img_t.shape[1]
-    b = np.zeros(2 * n_row * n_col, dtype=np.float32)
-    for i in range(n_row):
-        for j in range(n_col):
-            curr_row = (i * n_row) + j + 1
-            b[2 * curr_row - 1] = - img_x[i, j] * img_t[i, j]
-            b[2 * curr_row] = - img_y[i, j] * img_t[i, j]
+    n_rows, n_cols = img_x.shape
+    b = np.zeros((2 * n_rows * n_cols + 1))
+    for i in range(n_rows):
+        for j in range(n_cols):
+            i_s = i * n_cols + j + 1
+            b[2 * i_s-1] = -(img_x[i][j] * img_t[i][j])
+            b[2 * i_s] = -(img_y[i][j] * img_t[i][j])
     return b[1:]
 
 
-def q5_all_images():
-    pass
+def open_figure(figure_num, figure_title, figsize):
+    plt.figure(figure_num, figsize)
+    plt.clf()
+    plt.suptitle(figure_title, fontsize=13)
 
 
-def q5_image():
-    pass
+def plot_images(figure_num, rows, cols, ind, images, titles, cmap, axis=True, colorbar=True):
+    plt.figure(figure_num)
+    plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.8, hspace=0.8)
+    for i in range(len(images)):
+        if images[i] is None:
+            continue
+        ax = plt.subplot(rows, cols, i + ind)
+        ax.set_title(titles[i])
+        img = ax.imshow(images[i], cmap=cmap, interpolation='None')
+        if not axis:
+            plt.axis('off')
+        if colorbar:
+            plt.colorbar(img, fraction=0.046, pad=0.04)
 
 
 def main():
@@ -265,6 +283,30 @@ def main():
     ax.imshow(spatial_derivative(mdict['img1'], mdict['img6']), cmap='gray')
     plt.show()
 
+    # Question 5
+
+    lamb = 0.05
+    images = [mdict['img1'], mdict['img2'], mdict['img3'], mdict['img4'], mdict['img5'], mdict['img6']]
+    img_x, img_y = get_derivatives(images[0])
+    img_t_list = [images[1] - images[0], images[2] - images[0], images[3] - images[0], images[4] - images[0],
+               images[5] - images[0]]
+    display = []
+    titles = []
+    for i in range(5):
+        A = create_A(img_x, img_y, lamb)
+        b = create_b(img_x, img_y, img_t_list[i])
+        x = scipy.sparse.linalg.lsqr(A, b)[0]
+        U = x[::2].reshape(images[0].shape)
+        V = x[1::2].reshape(images[0].shape)
+        I1_w = warp_image(images[0], U, V)
+        display = display + [images[0], images[i+1], U, V, I1_w]
+        titles = titles + ['I1', 'I' + str(i+2), 'U', 'V', 'I1 warpped']
+    open_figure(3, 'Q5', figsize=(10,10))
+    plot_images(3, 5, 5, 1,
+                display,
+                titles,
+               'gray', axis=True, colorbar=False)
+    plt.show()
     print('Done')
 
 
