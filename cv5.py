@@ -229,7 +229,9 @@ def plot_images(figure_num, rows, cols, ind, images, titles, cmap, axis=True, co
         if colorbar:
             plt.colorbar(img, fraction=0.046, pad=0.04)
 
-
+# ================
+# Question 8
+# ================
 def plot_q8_images(source, dest, u, v, source_wrapped):
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.9, hspace=0.8)
 
@@ -262,7 +264,7 @@ def plot_q8_images(source, dest, u, v, source_wrapped):
 
 def pixel_in_range(x, y, img):
     Nrows, Ncols = img.shape
-    return x < Nrows and x >= 0 and y < Ncols and y >= 0
+    return 0 <= x < Nrows and 0 <= y < Ncols
 
 
 def calc_thetas(x, y, img, weights, I_x, I_y, I_t):
@@ -308,13 +310,9 @@ def LK_alg(I_1, I_2, iterations=1, ksize=21, sigma=3):
         u[x, y] += thetas[0]
         v[x, y] += thetas[1]
 
-    # Calculate the
-
-    # yy, xx = np.mgrid[0:num_rows, 0:num_cols]
-    # map_x = np.float32(xx - u)
-    # map_y = np.float32(yy - v)
-    # I_1_wrapped = cv2.remap(I_1, map_x, map_y, cv2.INTER_CUBIC)
+    # Calculate the warped image
     I_1_wrapped = warp_image(I_1, u, v)
+
     # Returns the dest image, source wrapped image, u, v
     return I_2, I_1_wrapped, u, v
 
@@ -338,95 +336,94 @@ def main():
 
 
     mdict = sio.loadmat("hw4_data/hw4_data/imgs_for_optical_flow.mat")
-    # image = mdict["img1"]
-    # u = mdict["u"]
-    # v = mdict["v"]
-    #
-    # # UV Flow
-    # image_w_bilinear_uv, image_w_remap_uv = Q2(image, u, v)
-    #
-    # # Affine flow
-    # flow_matrix = np.float32([[0.5, 0.2, 0], [0, 0.5, 8]])
-    # image_w_bilinear_affine = Q3(image)
-    # image_w_warp_affine = cv2.warpAffine(image, flow_matrix, image.shape)
-    #
-    # # Show images
-    # fig = plt.figure(5, figsize=(15, 10))
-    # ax = fig.add_subplot(1, 5, 1)
-    # ax.title.set_text('Original')
-    # ax.imshow(image, cmap='gray')
-    #
-    # ax = fig.add_subplot(152)
-    # ax.set_title('bilinear uv')
-    # ax.imshow(image_w_bilinear_uv, cmap='gray')
-    #
-    # ax = fig.add_subplot(153)
-    # ax.set_title('remap uv')
-    # ax.imshow(image_w_remap_uv, cmap='gray')
-    #
-    # ax = fig.add_subplot(154)
-    # ax.set_title('bilinear affine')
-    # ax.imshow(image_w_bilinear_affine, cmap='gray')
-    #
-    # ax = fig.add_subplot(155)
-    # ax.set_title('warpAffine')
-    # ax.imshow(image_w_warp_affine, cmap='gray')
-    # plt.show()
-    #
-    # # Question 4
-    # fig = plt.figure(5, figsize=(15, 10))
-    # ax = fig.add_subplot(1, 5, 1)
-    # ax.title.set_text('I2 - I1')
-    # ax.imshow(spatial_derivative(mdict['img1'], mdict['img2']), cmap='gray')
-    #
-    # ax = fig.add_subplot(152)
-    # ax.set_title('I3 - I1')
-    # ax.imshow(spatial_derivative(mdict['img1'], mdict['img3']), cmap='gray')
-    #
-    # ax = fig.add_subplot(153)
-    # ax.set_title('I4 - I1')
-    # ax.imshow(spatial_derivative(mdict['img1'], mdict['img4']), cmap='gray')
-    #
-    # ax = fig.add_subplot(154)
-    # ax.set_title('I5 - I1')
-    # ax.imshow(spatial_derivative(mdict['img1'], mdict['img5']), cmap='gray')
-    #
-    # ax = fig.add_subplot(155)
-    # ax.set_title('I6 - I1')
-    # ax.imshow(spatial_derivative(mdict['img1'], mdict['img6']), cmap='gray')
-    # plt.show()
-    #
-    # # Question 5
-    #
-    # lamb = 0.05
-    # images = [mdict['img1'], mdict['img2'], mdict['img3'], mdict['img4'], mdict['img5'], mdict['img6']]
-    # img_x, img_y = get_derivatives(images[0])
-    # img_t_list = [images[1] - images[0], images[2] - images[0], images[3] - images[0], images[4] - images[0],
-    #            images[5] - images[0]]
-    # display = []
-    # titles = []
-    # for i in range(5):
-    #     A = create_A(img_x, img_y, lamb)
-    #     b = generate_b(img_x, img_y, img_t_list[i])
-    #     x = scipy.sparse.linalg.lsqr(A, b)[0]
-    #     U = x[::2].reshape(images[0].shape)
-    #     V = x[1::2].reshape(images[0].shape)
-    #     I1_w = warp_image(images[0], U, V)
-    #     display = display + [images[0], images[i+1], U, V, I1_w]
-    #     titles = titles + ['I1', 'I' + str(i+2), 'U', 'V', 'I1 warpped']
-    # open_figure(3, 'Q5', figsize=(10,10))
-    # plot_images(3, 5, 5, 1,
-    #             display,
-    #             titles,
-    #            'gray', axis=True, colorbar=False)
-    # plt.show()
-    # print('Done')
+    image = mdict["img1"]
+    u = mdict["u"]
+    v = mdict["v"]
 
+    # UV Flow
+    image_w_bilinear_uv, image_w_remap_uv = Q2(image, u, v)
 
+    # Affine flow
+    flow_matrix = np.float32([[0.5, 0.2, 0], [0, 0.5, 8]])
+    image_w_bilinear_affine = Q3(image)
+    image_w_warp_affine = cv2.warpAffine(image, flow_matrix, image.shape)
+
+    # Show images
+    fig = plt.figure(5, figsize=(15, 10))
+    ax = fig.add_subplot(1, 5, 1)
+    ax.title.set_text('Original')
+    ax.imshow(image, cmap='gray')
+
+    ax = fig.add_subplot(152)
+    ax.set_title('bilinear uv')
+    ax.imshow(image_w_bilinear_uv, cmap='gray')
+
+    ax = fig.add_subplot(153)
+    ax.set_title('remap uv')
+    ax.imshow(image_w_remap_uv, cmap='gray')
+
+    ax = fig.add_subplot(154)
+    ax.set_title('bilinear affine')
+    ax.imshow(image_w_bilinear_affine, cmap='gray')
+
+    ax = fig.add_subplot(155)
+    ax.set_title('warpAffine')
+    ax.imshow(image_w_warp_affine, cmap='gray')
+    plt.show()
+
+    # Question 4
+    fig = plt.figure(5, figsize=(15, 10))
+    ax = fig.add_subplot(1, 5, 1)
+    ax.title.set_text('I2 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img2']), cmap='gray')
+
+    ax = fig.add_subplot(152)
+    ax.set_title('I3 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img3']), cmap='gray')
+
+    ax = fig.add_subplot(153)
+    ax.set_title('I4 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img4']), cmap='gray')
+
+    ax = fig.add_subplot(154)
+    ax.set_title('I5 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img5']), cmap='gray')
+
+    ax = fig.add_subplot(155)
+    ax.set_title('I6 - I1')
+    ax.imshow(spatial_derivative(mdict['img1'], mdict['img6']), cmap='gray')
+    plt.show()
+
+    # Question 5
+
+    lamb = 0.05
+    images = [mdict['img1'], mdict['img2'], mdict['img3'], mdict['img4'], mdict['img5'], mdict['img6']]
+    img_x, img_y = get_derivatives(images[0])
+    img_t_list = [images[1] - images[0], images[2] - images[0], images[3] - images[0], images[4] - images[0],
+               images[5] - images[0]]
+    display = []
+    titles = []
+    for i in range(5):
+        A = create_A(img_x, img_y, lamb)
+        b = generate_b(img_x, img_y, img_t_list[i])
+        x = scipy.sparse.linalg.lsqr(A, b)[0]
+        U = x[::2].reshape(images[0].shape)
+        V = x[1::2].reshape(images[0].shape)
+        I1_w = warp_image(images[0], U, V)
+        display = display + [images[0], images[i+1], U, V, I1_w]
+        titles = titles + ['I1', 'I' + str(i+2), 'U', 'V', 'I1 warpped']
+    open_figure(3, 'Q5', figsize=(10,10))
+    plot_images(3, 5, 5, 1,
+                display,
+                titles,
+               'gray', axis=True, colorbar=False)
+    plt.show()
 
     # Question 8
+
     Is = [mdict['img%d' % (i + 1)] for i in range(6)]
     ex8(Is)
+    print('Done')
 
 if __name__ == '__main__':
     main()
